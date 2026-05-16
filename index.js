@@ -10,12 +10,34 @@ const {
 } = require('discord.js');
 
 // ======================
-// VARIABLES SEGURAS (.env)
+// DEBUG
 // ======================
+
+console.log("🔐 TOKEN:", process.env.DISCORD_TOKEN ? "OK" : "MISSING");
+console.log("🆔 CLIENT_ID:", process.env.CLIENT_ID);
+console.log("🏠 GUILD_ID:", process.env.GUILD_ID);
+
+// ======================
+// VALIDACIÓN
+// ======================
+
+if (!process.env.DISCORD_TOKEN || !process.env.CLIENT_ID || !process.env.GUILD_ID) {
+    console.log("❌ Faltan variables en .env");
+    process.exit(1);
+}
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
+
+// ======================
+// IMÁGENES
+// ======================
+
+const PLACAS_IMG = "https://i.imgur.com/WyJrWv3.gif";
+const ASCENSO_IMG = "https://i.imgur.com/WyJrWv3.gif";
+const DESCENSO_IMG = "https://i.imgur.com/WyJrWv3.gif";
+const DESPIDO_IMG = "https://i.imgur.com/WyJrWv3.gif";
 
 // ======================
 // CLIENTE
@@ -29,6 +51,12 @@ const client = new Client({
 });
 
 // ======================
+// REST
+// ======================
+
+const rest = new REST({ version: '10' }).setToken(TOKEN);
+
+// ======================
 // COMANDOS
 // ======================
 
@@ -36,87 +64,54 @@ const commands = [
 
     new SlashCommandBuilder()
         .setName('placa')
-        .setDescription('Asigna una placa oficial')
-        .addUserOption(option =>
-            option.setName('usuario').setDescription('Usuario').setRequired(true)
-        )
-        .addStringOption(option =>
-            option.setName('prefijo').setDescription('Ejemplo: FGR').setRequired(true)
-        )
-        .addStringOption(option =>
-            option.setName('nombre').setDescription('Nombre del agente').setRequired(true)
-        )
-        .addIntegerOption(option =>
-            option.setName('numero').setDescription('Número de placa').setRequired(true)
-        ),
+        .setDescription('Asignar placa oficial')
+        .addUserOption(o => o.setName('usuario').setDescription('Usuario').setRequired(true))
+        .addStringOption(o => o.setName('prefijo').setDescription('Ej: FGR').setRequired(true))
+        .addStringOption(o => o.setName('nombre').setDescription('Nombre').setRequired(true))
+        .addIntegerOption(o => o.setName('numero').setDescription('Número').setRequired(true)),
 
     new SlashCommandBuilder()
         .setName('ascenso')
         .setDescription('Ascender agente')
-        .addUserOption(option =>
-            option.setName('usuario').setDescription('Usuario').setRequired(true)
-        )
-        .addRoleOption(option =>
-            option.setName('nuevo_rango').setDescription('Nuevo rango').setRequired(true)
-        )
-        .addStringOption(option =>
-            option.setName('motivo').setDescription('Motivo del ascenso').setRequired(true)
-        )
-        .addRoleOption(option =>
-            option.setName('rango_anterior').setDescription('Rango anterior')
-        ),
+        .addUserOption(o => o.setName('usuario').setDescription('Usuario').setRequired(true))
+        .addRoleOption(o => o.setName('nuevo_rango').setDescription('Nuevo rango').setRequired(true))
+        .addStringOption(o => o.setName('motivo').setDescription('Motivo').setRequired(true)),
 
     new SlashCommandBuilder()
         .setName('descenso')
         .setDescription('Descender agente')
-        .addUserOption(option =>
-            option.setName('usuario').setDescription('Usuario').setRequired(true)
-        )
-        .addRoleOption(option =>
-            option.setName('nuevo_rango').setDescription('Nuevo rango').setRequired(true)
-        )
-        .addStringOption(option =>
-            option.setName('motivo').setDescription('Motivo del descenso').setRequired(true)
-        )
-        .addRoleOption(option =>
-            option.setName('rango_anterior').setDescription('Rango anterior')
-        ),
+        .addUserOption(o => o.setName('usuario').setDescription('Usuario').setRequired(true))
+        .addRoleOption(o => o.setName('nuevo_rango').setDescription('Nuevo rango').setRequired(true))
+        .addStringOption(o => o.setName('motivo').setDescription('Motivo').setRequired(true)),
 
     new SlashCommandBuilder()
         .setName('despido')
         .setDescription('Despedir agente')
-        .addUserOption(option =>
-            option.setName('usuario').setDescription('Usuario').setRequired(true)
-        )
-        .addStringOption(option =>
-            option.setName('motivo').setDescription('Motivo del despido').setRequired(true)
-        )
-        .addRoleOption(option =>
-            option.setName('rango').setDescription('Rango a quitar')
-        )
+        .addUserOption(o => o.setName('usuario').setDescription('Usuario').setRequired(true))
+        .addStringOption(o => o.setName('motivo').setDescription('Motivo').setRequired(true))
 
-].map(cmd => cmd.toJSON());
+].map(c => c.toJSON());
 
 // ======================
-// REGISTRO DE COMANDOS
+// REGISTRO
 // ======================
-
-const rest = new REST({ version: '10' }).setToken(TOKEN);
 
 (async () => {
-    try {
-        console.log('Registrando comandos...');
+    await rest.put(
+        Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+        { body: commands }
+    );
 
-        await rest.put(
-            Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
-            { body: commands }
-        );
-
-        console.log('✅ Comandos registrados.');
-    } catch (error) {
-        console.error(error);
-    }
+    console.log("✅ Comandos registrados");
 })();
+
+// ======================
+// READY
+// ======================
+
+client.once('ready', () => {
+    console.log(`🟢 BOT ACTIVO COMO ${client.user.tag}`);
+});
 
 // ======================
 // INTERACCIONES
@@ -126,114 +121,135 @@ client.on('interactionCreate', async interaction => {
 
     if (!interaction.isChatInputCommand()) return;
 
-    // ===== /PLACA =====
-    if (interaction.commandName === 'placa') {
+    try {
 
-        const usuario = interaction.options.getUser('usuario');
-        const prefijo = interaction.options.getString('prefijo');
-        const nombre = interaction.options.getString('nombre');
-        const numero = interaction.options.getInteger('numero');
+        // ======================
+        // PLACA
+        // ======================
+        if (interaction.commandName === 'placa') {
 
-        const placa = `[${prefijo}-${String(numero).padStart(3, '0')}]`;
+            await interaction.deferReply();
 
-        const miembro = await interaction.guild.members.fetch(usuario.id);
+            const usuario = interaction.options.getUser('usuario');
+            const prefijo = interaction.options.getString('prefijo');
+            const nombre = interaction.options.getString('nombre');
+            const numero = interaction.options.getInteger('numero');
 
-        const nuevoApodo = `${placa} ${nombre}`;
+            const miembro = await interaction.guild.members.fetch(usuario.id);
 
-        if (!miembro.manageable) {
-            return interaction.reply({ content: '❌ No puedo cambiar el apodo.', ephemeral: true });
+            const placa = `[${prefijo}-${String(numero).padStart(3, '0')}]`;
+
+            await miembro.setNickname(`${placa} ${nombre}`);
+
+            const embed = new EmbedBuilder()
+                .setTitle('🚔 ASIGNACIÓN DE PLACA OFICIAL')
+                .setColor(0x00ff00)
+                .setImage(PLACAS_IMG)
+                .addFields(
+                    { name: '👮 Oficial', value: `${nombre}`, inline: true },
+                    { name: '👤 Usuario', value: `${usuario}`, inline: true },
+                    { name: '🪪 Placa', value: `${placa}`, inline: true }
+                )
+                .setFooter({ text: 'Sistema oficial de asignación - FGR' });
+
+            return interaction.editReply({ embeds: [embed] });
         }
 
-        await miembro.setNickname(nuevoApodo);
+        // ======================
+        // ASCENSO
+        // ======================
+        if (interaction.commandName === 'ascenso') {
 
-        const embed = new EmbedBuilder()
-            .setTitle('🚔 PLACA OFICIAL ASIGNADA')
-            .setDescription(
-                `👮 Usuario: ${usuario}\n📛 Nombre: ${nombre}\n🚓 Placa: ${placa}\n🆔 Apodo: ${nuevoApodo}`
-            )
-            .setColor(0x00ff00);
+            await interaction.deferReply();
 
-        await interaction.reply({ embeds: [embed] });
-    }
+            const usuario = interaction.options.getUser('usuario');
+            const nuevo = interaction.options.getRole('nuevo_rango');
+            const motivo = interaction.options.getString('motivo');
 
-    // ===== /ASCENSO =====
-    if (interaction.commandName === 'ascenso') {
+            const miembro = await interaction.guild.members.fetch(usuario.id);
+            await miembro.roles.add(nuevo);
 
-        const usuario = interaction.options.getUser('usuario');
-        const nuevoRango = interaction.options.getRole('nuevo_rango');
-        const rangoAnterior = interaction.options.getRole('rango_anterior');
-        const motivo = interaction.options.getString('motivo');
+            const embed = new EmbedBuilder()
+                .setTitle('⬆️ ASCENSO OFICIAL')
+                .setColor(0x00ff00)
+                .setImage(ASCENSO_IMG)
+                .addFields(
+                    { name: '👤 Usuario', value: `${usuario}`, inline: true },
+                    { name: '🎖 Nuevo rango', value: `${nuevo}`, inline: true },
+                    { name: '📄 Motivo', value: `${motivo}`, inline: false }
+                )
+                .setFooter({ text: 'Sistema oficial de ascensos - FGR' });
 
-        const miembro = await interaction.guild.members.fetch(usuario.id);
+            return interaction.editReply({ embeds: [embed] });
+        }
 
-        await miembro.roles.add(nuevoRango);
-        if (rangoAnterior) await miembro.roles.remove(rangoAnterior);
+        // ======================
+        // DESCENSO
+        // ======================
+        if (interaction.commandName === 'descenso') {
 
-        const embed = new EmbedBuilder()
-            .setTitle('⬆️ ASCENSO OFICIAL')
-            .setDescription(
-                `👮 Usuario: ${usuario}\n🏅 Nuevo rango: ${nuevoRango}\n📄 Motivo: ${motivo}`
-            )
-            .setColor(0x00ff00);
+            await interaction.deferReply();
 
-        await interaction.reply({ embeds: [embed] });
-    }
+            const usuario = interaction.options.getUser('usuario');
+            const nuevo = interaction.options.getRole('nuevo_rango');
+            const motivo = interaction.options.getString('motivo');
 
-    // ===== /DESCENSO =====
-    if (interaction.commandName === 'descenso') {
+            const miembro = await interaction.guild.members.fetch(usuario.id);
+            await miembro.roles.add(nuevo);
 
-        const usuario = interaction.options.getUser('usuario');
-        const nuevoRango = interaction.options.getRole('nuevo_rango');
-        const rangoAnterior = interaction.options.getRole('rango_anterior');
-        const motivo = interaction.options.getString('motivo');
+            const embed = new EmbedBuilder()
+                .setTitle('⬇️ DESCENSO OFICIAL')
+                .setColor(0xffa500)
+                .setImage(DESCENSO_IMG)
+                .addFields(
+                    { name: '👤 Usuario', value: `${usuario}`, inline: true },
+                    { name: '📉 Nuevo rango', value: `${nuevo}`, inline: true },
+                    { name: '📄 Motivo', value: `${motivo}`, inline: false }
+                )
+                .setFooter({ text: 'Sistema oficial de control interno - FGR' });
 
-        const miembro = await interaction.guild.members.fetch(usuario.id);
+            return interaction.editReply({ embeds: [embed] });
+        }
 
-        await miembro.roles.add(nuevoRango);
-        if (rangoAnterior) await miembro.roles.remove(rangoAnterior);
+        // ======================
+        // DESPIDO
+        // ======================
+        if (interaction.commandName === 'despido') {
 
-        const embed = new EmbedBuilder()
-            .setTitle('⬇️ DESCENSO OFICIAL')
-            .setDescription(
-                `👮 Usuario: ${usuario}\n📉 Nuevo rango: ${nuevoRango}\n📄 Motivo: ${motivo}`
-            )
-            .setColor(0xffaa00);
+            await interaction.deferReply();
 
-        await interaction.reply({ embeds: [embed] });
-    }
+            const usuario = interaction.options.getUser('usuario');
+            const motivo = interaction.options.getString('motivo');
 
-    // ===== /DESPIDO =====
-    if (interaction.commandName === 'despido') {
+            const miembro = await interaction.guild.members.fetch(usuario.id);
 
-        const usuario = interaction.options.getUser('usuario');
-        const motivo = interaction.options.getString('motivo');
-        const rango = interaction.options.getRole('rango');
+            const embed = new EmbedBuilder()
+                .setTitle('❌ BAJA LABORAL OFICIAL')
+                .setColor(0xff0000)
+                .setImage(DESPIDO_IMG)
+                .addFields(
+                    { name: '👤 Usuario', value: `${usuario}`, inline: true },
+                    { name: '📄 Motivo', value: `${motivo}`, inline: false }
+                )
+                .setFooter({ text: 'Sistema oficial de bajas - FGR' });
 
-        const miembro = await interaction.guild.members.fetch(usuario.id);
+            return interaction.editReply({ embeds: [embed] });
+        }
 
-        if (rango) await miembro.roles.remove(rango);
+    } catch (err) {
+        console.error(err);
 
-        const embed = new EmbedBuilder()
-            .setTitle('❌ DESPIDO OFICIAL')
-            .setDescription(
-                `👮 Usuario: ${usuario}\n📄 Motivo: ${motivo}`
-            )
-            .setColor(0xff0000);
+        if (interaction.deferred || interaction.replied) {
+            return interaction.editReply({
+                content: "❌ Error ejecutando comando"
+            });
+        }
 
-        await interaction.reply({ embeds: [embed] });
+        return interaction.reply({
+            content: "❌ Error ejecutando comando",
+            ephemeral: true
+        });
     }
 });
-
-// ======================
-// READY
-// ======================
-
-client.once('ready', () => {
-    console.log(`✅ Bot conectado como ${client.user.tag}`);
-});
-
-// ======================
-// LOGIN
-// ======================
 
 client.login(TOKEN);
