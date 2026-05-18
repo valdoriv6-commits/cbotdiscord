@@ -10,37 +10,53 @@ const {
 } = require('discord.js');
 
 // ======================
-// DEBUG
+// VARIABLES
 // ======================
-
-console.log("🔐 TOKEN:", process.env.DISCORD_TOKEN ? "OK" : "MISSING");
-console.log("🆔 CLIENT_ID:", process.env.CLIENT_ID);
-console.log("🏠 GUILD_ID:", process.env.GUILD_ID);
-
-// ======================
-// VALIDACIÓN
-// ======================
-
-if (!process.env.DISCORD_TOKEN || !process.env.CLIENT_ID || !process.env.GUILD_ID) {
-    console.log("❌ Faltan variables en .env");
-    process.exit(1);
-}
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
 
 // ======================
-// IMÁGENES
+// VALIDACIÓN
 // ======================
 
-const PLACAS_IMG = "https://i.imgur.com/WyJrWv3.gif";
-const ASCENSO_IMG = "https://i.imgur.com/WyJrWv3.gif";
-const DESCENSO_IMG = "https://i.imgur.com/WyJrWv3.gif";
-const DESPIDO_IMG = "https://i.imgur.com/WyJrWv3.gif";
+if (!TOKEN || !CLIENT_ID || !GUILD_ID) {
+
+    console.log("❌ Faltan variables en .env");
+    process.exit(1);
+
+}
 
 // ======================
-// CLIENTE
+// IMAGEN
+// ======================
+
+const IMG = "https://i.imgur.com/WyJrWv3.gif";
+
+// ======================
+// ROL CIVIL
+// ======================
+
+const ROL_CIVIL = "1351370954785423360";
+
+// ======================
+// ROLES FGR
+// ======================
+
+const ROLES_FGR = [
+    "1389071787094184127",
+    "1391149327057031169",
+    "1351375724526829609",
+    "1351356643438497863",
+    "1385004865427603527",
+    "1351351881657618535",
+    "1351384226297024552",
+    "1351384232144146512"
+];
+
+// ======================
+// CLIENT
 // ======================
 
 const client = new Client({
@@ -51,66 +67,199 @@ const client = new Client({
 });
 
 // ======================
-// REST
-// ======================
-
-const rest = new REST({ version: '10' }).setToken(TOKEN);
-
-// ======================
 // COMANDOS
 // ======================
 
 const commands = [
 
+    // ======================
+    // PLACA
+    // ======================
+
     new SlashCommandBuilder()
         .setName('placa')
-        .setDescription('Asignar placa oficial')
-        .addUserOption(o => o.setName('usuario').setDescription('Usuario').setRequired(true))
-        .addStringOption(o => o.setName('prefijo').setDescription('Ej: FGR').setRequired(true))
-        .addStringOption(o => o.setName('nombre').setDescription('Nombre').setRequired(true))
-        .addIntegerOption(o => o.setName('numero').setDescription('Número').setRequired(true)),
+        .setDescription('Asignar placa')
+        .addUserOption(o =>
+            o.setName('usuario')
+                .setDescription('Usuario')
+                .setRequired(true)
+        )
+        .addStringOption(o =>
+            o.setName('prefijo')
+                .setDescription('Prefijo')
+                .setRequired(true)
+        )
+        .addStringOption(o =>
+            o.setName('nombre')
+                .setDescription('Nombre')
+                .setRequired(true)
+        )
+        .addIntegerOption(o =>
+            o.setName('numero')
+                .setDescription('Número')
+                .setRequired(true)
+        ),
+
+    // ======================
+    // ASCENSO
+    // ======================
 
     new SlashCommandBuilder()
         .setName('ascenso')
         .setDescription('Ascender agente')
-        .addUserOption(o => o.setName('usuario').setDescription('Usuario').setRequired(true))
-        .addRoleOption(o => o.setName('nuevo_rango').setDescription('Nuevo rango').setRequired(true))
-        .addStringOption(o => o.setName('motivo').setDescription('Motivo').setRequired(true)),
+        .addUserOption(o =>
+            o.setName('usuario')
+                .setDescription('Usuario')
+                .setRequired(true)
+        )
+        .addRoleOption(o =>
+            o.setName('nuevo_rango')
+                .setDescription('Nuevo rango')
+                .setRequired(true)
+        )
+        .addStringOption(o =>
+            o.setName('motivo')
+                .setDescription('Motivo')
+                .setRequired(true)
+        ),
+
+    // ======================
+    // DESCENSO
+    // ======================
 
     new SlashCommandBuilder()
         .setName('descenso')
         .setDescription('Descender agente')
-        .addUserOption(o => o.setName('usuario').setDescription('Usuario').setRequired(true))
-        .addRoleOption(o => o.setName('nuevo_rango').setDescription('Nuevo rango').setRequired(true))
-        .addStringOption(o => o.setName('motivo').setDescription('Motivo').setRequired(true)),
+        .addUserOption(o =>
+            o.setName('usuario')
+                .setDescription('Usuario')
+                .setRequired(true)
+        )
+        .addRoleOption(o =>
+            o.setName('nuevo_rango')
+                .setDescription('Nuevo rango')
+                .setRequired(true)
+        )
+        .addStringOption(o =>
+            o.setName('motivo')
+                .setDescription('Motivo')
+                .setRequired(true)
+        ),
+
+    // ======================
+    // DESPIDO
+    // ======================
 
     new SlashCommandBuilder()
         .setName('despido')
         .setDescription('Despedir agente')
-        .addUserOption(o => o.setName('usuario').setDescription('Usuario').setRequired(true))
-        .addStringOption(o => o.setName('motivo').setDescription('Motivo').setRequired(true))
+        .addUserOption(o =>
+            o.setName('usuario')
+                .setDescription('Usuario')
+                .setRequired(true)
+        )
+        .addStringOption(o =>
+            o.setName('motivo')
+                .setDescription('Motivo')
+                .setRequired(true)
+        ),
+
+    // ======================
+    // SANCIÓN
+    // ======================
+
+    new SlashCommandBuilder()
+        .setName('sancion')
+        .setDescription('Aplicar sanción')
+        .addUserOption(o =>
+            o.setName('usuario')
+                .setDescription('Agente sancionado')
+                .setRequired(true)
+        )
+        .addStringOption(o =>
+            o.setName('sancion')
+                .setDescription('Tipo de sanción')
+                .setRequired(true)
+        )
+        .addStringOption(o =>
+            o.setName('motivo')
+                .setDescription('Motivo')
+                .setRequired(true)
+        )
+        .addStringOption(o =>
+            o.setName('nota')
+                .setDescription('Nota')
+                .setRequired(true)
+        )
+        .addUserOption(o =>
+            o.setName('autorizado')
+                .setDescription('Quién autorizó')
+                .setRequired(true)
+        ),
+
+    // ======================
+    // EMBED PERSONALIZADO
+    // ======================
+
+    new SlashCommandBuilder()
+        .setName('embed')
+        .setDescription('Crear embed personalizado')
+        .addStringOption(o =>
+            o.setName('titulo')
+                .setDescription('Título')
+                .setRequired(true)
+        )
+        .addStringOption(o =>
+            o.setName('descripcion')
+                .setDescription('Descripción')
+                .setRequired(true)
+        )
+        .addStringOption(o =>
+            o.setName('color')
+                .setDescription('Color HEX Ej: #ff0000')
+                .setRequired(false)
+        )
+        .addStringOption(o =>
+            o.setName('imagen')
+                .setDescription('URL imagen')
+                .setRequired(false)
+        )
 
 ].map(c => c.toJSON());
 
 // ======================
-// REGISTRO
+// REGISTRAR COMANDOS
 // ======================
 
-(async () => {
-    await rest.put(
-        Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
-        { body: commands }
-    );
+const rest = new REST({ version: '10' }).setToken(TOKEN);
 
-    console.log("✅ Comandos registrados");
+(async () => {
+
+    try {
+
+        await rest.put(
+            Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+            { body: commands }
+        );
+
+        console.log("✅ Comandos registrados");
+
+    } catch (err) {
+
+        console.error("❌ Error registrando comandos:", err);
+
+    }
+
 })();
 
 // ======================
 // READY
 // ======================
 
-client.once('ready', () => {
-    console.log(`🟢 BOT ACTIVO COMO ${client.user.tag}`);
+client.once('clientReady', () => {
+
+    console.log(`🟢 ${client.user.tag} ONLINE`);
+
 });
 
 // ======================
@@ -126,9 +275,8 @@ client.on('interactionCreate', async interaction => {
         // ======================
         // PLACA
         // ======================
-        if (interaction.commandName === 'placa') {
 
-            await interaction.deferReply();
+        if (interaction.commandName === 'placa') {
 
             const usuario = interaction.options.getUser('usuario');
             const prefijo = interaction.options.getString('prefijo');
@@ -141,115 +289,280 @@ client.on('interactionCreate', async interaction => {
 
             await miembro.setNickname(`${placa} ${nombre}`);
 
-            const embed = new EmbedBuilder()
-                .setTitle('🚔 ASIGNACIÓN DE PLACA OFICIAL')
-                .setColor(0x00ff00)
-                .setImage(PLACAS_IMG)
-                .addFields(
-                    { name: '👮 Oficial', value: `${nombre}`, inline: true },
-                    { name: '👤 Usuario', value: `${usuario}`, inline: true },
-                    { name: '🪪 Placa', value: `${placa}`, inline: true }
-                )
-                .setFooter({ text: 'Sistema oficial de asignación - FGR' });
+            for (const roleId of ROLES_FGR) {
 
-            return interaction.editReply({ embeds: [embed] });
+                const role = interaction.guild.roles.cache.get(roleId);
+
+                if (role) {
+                    await miembro.roles.add(role).catch(() => {});
+                }
+
+            }
+
+            const embed = new EmbedBuilder()
+                .setTitle('🚔 PLACA ASIGNADA')
+                .setColor(0x00ff00)
+                .setImage(IMG)
+                .addFields(
+                    {
+                        name: '👮 Oficial',
+                        value: nombre,
+                        inline: true
+                    },
+                    {
+                        name: '👤 Usuario',
+                        value: `${usuario}`,
+                        inline: true
+                    },
+                    {
+                        name: '🪪 Placa',
+                        value: placa,
+                        inline: true
+                    }
+                );
+
+            return interaction.reply({
+                embeds: [embed]
+            });
+
         }
 
         // ======================
         // ASCENSO
         // ======================
-        if (interaction.commandName === 'ascenso') {
 
-            await interaction.deferReply();
+        if (interaction.commandName === 'ascenso') {
 
             const usuario = interaction.options.getUser('usuario');
             const nuevo = interaction.options.getRole('nuevo_rango');
             const motivo = interaction.options.getString('motivo');
 
             const miembro = await interaction.guild.members.fetch(usuario.id);
+
             await miembro.roles.add(nuevo);
 
             const embed = new EmbedBuilder()
-                .setTitle('⬆️ ASCENSO OFICIAL')
+                .setTitle('⬆️ ASCENSO')
                 .setColor(0x00ff00)
-                .setImage(ASCENSO_IMG)
+                .setImage(IMG)
                 .addFields(
-                    { name: '👤 Usuario', value: `${usuario}`, inline: true },
-                    { name: '🎖 Nuevo rango', value: `${nuevo}`, inline: true },
-                    { name: '📄 Motivo', value: `${motivo}`, inline: false }
-                )
-                .setFooter({ text: 'Sistema oficial de ascensos - FGR' });
+                    {
+                        name: '👤 Usuario',
+                        value: `${usuario}`
+                    },
+                    {
+                        name: '🎖 Nuevo rango',
+                        value: `${nuevo}`
+                    },
+                    {
+                        name: '📄 Motivo',
+                        value: motivo
+                    }
+                );
 
-            return interaction.editReply({ embeds: [embed] });
+            return interaction.reply({
+                embeds: [embed]
+            });
+
         }
 
         // ======================
         // DESCENSO
         // ======================
-        if (interaction.commandName === 'descenso') {
 
-            await interaction.deferReply();
+        if (interaction.commandName === 'descenso') {
 
             const usuario = interaction.options.getUser('usuario');
             const nuevo = interaction.options.getRole('nuevo_rango');
             const motivo = interaction.options.getString('motivo');
 
             const miembro = await interaction.guild.members.fetch(usuario.id);
+
             await miembro.roles.add(nuevo);
 
             const embed = new EmbedBuilder()
-                .setTitle('⬇️ DESCENSO OFICIAL')
-                .setColor(0xffa500)
-                .setImage(DESCENSO_IMG)
+                .setTitle('⬇️ DESCENSO')
+                .setColor(0xff9900)
+                .setImage(IMG)
                 .addFields(
-                    { name: '👤 Usuario', value: `${usuario}`, inline: true },
-                    { name: '📉 Nuevo rango', value: `${nuevo}`, inline: true },
-                    { name: '📄 Motivo', value: `${motivo}`, inline: false }
-                )
-                .setFooter({ text: 'Sistema oficial de control interno - FGR' });
+                    {
+                        name: '👤 Usuario',
+                        value: `${usuario}`
+                    },
+                    {
+                        name: '📉 Nuevo rango',
+                        value: `${nuevo}`
+                    },
+                    {
+                        name: '📄 Motivo',
+                        value: motivo
+                    }
+                );
 
-            return interaction.editReply({ embeds: [embed] });
+            return interaction.reply({
+                embeds: [embed]
+            });
+
         }
 
         // ======================
         // DESPIDO
         // ======================
-        if (interaction.commandName === 'despido') {
 
-            await interaction.deferReply();
+        if (interaction.commandName === 'despido') {
 
             const usuario = interaction.options.getUser('usuario');
             const motivo = interaction.options.getString('motivo');
 
             const miembro = await interaction.guild.members.fetch(usuario.id);
 
-            const embed = new EmbedBuilder()
-                .setTitle('❌ BAJA LABORAL OFICIAL')
-                .setColor(0xff0000)
-                .setImage(DESPIDO_IMG)
-                .addFields(
-                    { name: '👤 Usuario', value: `${usuario}`, inline: true },
-                    { name: '📄 Motivo', value: `${motivo}`, inline: false }
-                )
-                .setFooter({ text: 'Sistema oficial de bajas - FGR' });
+            const roles = miembro.roles.cache.filter(
+                role => role.id !== interaction.guild.id
+            );
 
-            return interaction.editReply({ embeds: [embed] });
+            for (const role of roles.values()) {
+
+                await miembro.roles.remove(role).catch(() => {});
+
+            }
+
+            await miembro.setNickname(null).catch(() => {});
+
+            const rolCivil = interaction.guild.roles.cache.get(ROL_CIVIL);
+
+            if (rolCivil) {
+
+                await miembro.roles.add(rolCivil).catch(() => {});
+
+            }
+
+            const embed = new EmbedBuilder()
+                .setTitle('❌ DESPIDO')
+                .setColor(0xff0000)
+                .setImage(IMG)
+                .addFields(
+                    {
+                        name: '👤 Usuario',
+                        value: `${usuario}`
+                    },
+                    {
+                        name: '📄 Motivo',
+                        value: motivo
+                    },
+                    {
+                        name: '🗑 Estado',
+                        value: 'Roles eliminados y placa removida'
+                    }
+                );
+
+            return interaction.reply({
+                embeds: [embed]
+            });
+
+        }
+
+        // ======================
+        // SANCIÓN
+        // ======================
+
+        if (interaction.commandName === 'sancion') {
+
+            const usuario = interaction.options.getUser('usuario');
+            const sancion = interaction.options.getString('sancion');
+            const motivo = interaction.options.getString('motivo');
+            const nota = interaction.options.getString('nota');
+            const autorizado = interaction.options.getUser('autorizado');
+
+            const embed = new EmbedBuilder()
+                .setTitle('⚠️ SANCIÓN OFICIAL')
+                .setColor(0xffff00)
+                .setImage(IMG)
+                .addFields(
+                    {
+                        name: '⚖️ Sanción',
+                        value: sancion
+                    },
+                    {
+                        name: '📄 Motivo',
+                        value: motivo
+                    },
+                    {
+                        name: '👮 Agente/s',
+                        value: `${usuario}`
+                    },
+                    {
+                        name: '📝 Nota',
+                        value: nota
+                    },
+                    {
+                        name: '✅ Autorizado',
+                        value: `${autorizado}`
+                    }
+                );
+
+            return interaction.reply({
+                embeds: [embed]
+            });
+
+        }
+
+        // ======================
+        // EMBED
+        // ======================
+
+        if (interaction.commandName === 'embed') {
+
+            const titulo = interaction.options.getString('titulo');
+            const descripcion = interaction.options.getString('descripcion');
+            const color = interaction.options.getString('color') || '#0099ff';
+            const imagen = interaction.options.getString('imagen');
+
+            const embed = new EmbedBuilder()
+                .setTitle(titulo)
+                .setDescription(descripcion)
+                .setColor(color);
+
+            if (imagen) {
+                embed.setImage(imagen);
+            }
+
+            return interaction.reply({
+                embeds: [embed]
+            });
+
         }
 
     } catch (err) {
-        console.error(err);
 
-        if (interaction.deferred || interaction.replied) {
-            return interaction.editReply({
-                content: "❌ Error ejecutando comando"
-            });
+        console.error("❌ ERROR:", err);
+
+        if (!interaction.replied) {
+
+            interaction.reply({
+                content: "❌ Error ejecutando comando",
+                ephemeral: true
+            }).catch(() => {});
+
         }
 
-        return interaction.reply({
-            content: "❌ Error ejecutando comando",
-            ephemeral: true
-        });
     }
+
 });
+
+// ======================
+// EVITAR CIERRE
+// ======================
+
+process.on('unhandledRejection', error => {
+    console.error('❌ Unhandled promise rejection:', error);
+});
+
+process.on('uncaughtException', error => {
+    console.error('❌ Uncaught exception:', error);
+});
+
+// ======================
+// LOGIN
+// ======================
 
 client.login(TOKEN);
